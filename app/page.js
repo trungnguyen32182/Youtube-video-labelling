@@ -28,7 +28,7 @@ export default function Home() {
 
   const anazlyzeComments = async (comments) => {
     try {
-      const data = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/analyze`, {
+      const data = await fetch(`http://localhost:8000/api/analyze`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -77,7 +77,6 @@ export default function Home() {
       window.alert("Please login to continue");
     }
   };
-
   return (
     <main className="bg-main-grey flex flex-col min-h-screen text-black">
       <Appbar />

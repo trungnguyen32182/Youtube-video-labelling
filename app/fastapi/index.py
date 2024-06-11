@@ -22,6 +22,7 @@ origins = [
     "http://localhost",
     "http://localhost:3000",
     "http://localhost:8080",
+    "http://localhost:8000",
 ]
 
 app.add_middleware(
@@ -33,8 +34,14 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+async def hello():
+    return {"message": "hello world"}
+
+
 @app.post("/api/analyze")
 async def analyze(comment: Comment):
+    print("da vao python")
     client = HumeStreamClient(os.getenv("HUME_API_KEY"))
     config = LanguageConfig()
     res = []
@@ -53,7 +60,8 @@ async def analyze(comment: Comment):
 
             # Calculate mean scores
             mean_scores = {
-                emotion: aggregated_scores[emotion] / count_per_emotion[emotion]
+                emotion: aggregated_scores[emotion] /
+                count_per_emotion[emotion]
                 for emotion in aggregated_scores
             }
 
