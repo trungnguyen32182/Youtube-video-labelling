@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from hume import HumeStreamClient
 from hume.models.config import LanguageConfig
 from collections import defaultdict
@@ -7,17 +7,26 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from dotenv import load_dotenv
+from youtube_transcript_api import YouTubeTranscriptApi
 
+# Load environment variables
 dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
 load_dotenv(dotenv_path=dotenv_path)
 
-
+# Define Pydantic models for request bodies
 class Comment(BaseModel):
     comment_data: List[str]
 
+class TranscriptRequest(BaseModel):
+    videoId: str
+    
+class Transcript(BaseModel):
+    transcript_data: List[str]
 
+# Initialize FastAPI app
 app = FastAPI()
 
+# Define allowed origins for CORS
 origins = [
     "http://localhost",
     "http://localhost:3000",
@@ -25,6 +34,7 @@ origins = [
     "http://localhost:8000",
 ]
 
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -33,61 +43,125 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/")
 async def hello():
     return {"message": "hello world"}
 
-
 @app.post("/api/analyze")
 async def analyze(comment: Comment):
-    print("da vao python")
     client = HumeStreamClient(os.getenv("HUME_API_KEY"))
     config = LanguageConfig()
     res = []
     comment_with_emotion = []
-    async with client.connect([config]) as socket:
-        for sample in comment.comment_data:
-            result = await socket.send_text(sample)
-            emotions = result["language"]["predictions"][0]["emotions"]
-            comment_with_emotion.append([sample, emotions])
-            aggregated_scores = defaultdict(float)
-            count_per_emotion = defaultdict(int)
+    try:
+        async with client.connect([config]) as socket:
+            for sample in comment.comment_data:
+                result = await socket.send_text(sample)
+                emotions = result["language"]["predictions"][0]["emotions"]
+                comment_with_emotion.append([sample, emotions])
+                aggregated_scores = defaultdict(float)
+                count_per_emotion = defaultdict(int)
 
-            for emotion in emotions:
-                aggregated_scores[emotion["name"]] += emotion["score"]
-                count_per_emotion[emotion["name"]] += 1
+                for emotion in emotions:
+                    aggregated_scores[emotion["name"]] += emotion["score"]
+                    count_per_emotion[emotion["name"]] += 1
 
-            # Calculate mean scores
-            mean_scores = {
-                emotion: aggregated_scores[emotion] /
-                count_per_emotion[emotion]
-                for emotion in aggregated_scores
-            }
+                # Calculate mean scores
+                mean_scores = {
+                    emotion: aggregated_scores[emotion] /
+                    count_per_emotion[emotion]
+                    for emotion in aggregated_scores
+                }
 
-            # Rank emotions based on mean scores
-            ranked_emotions = sorted(
-                mean_scores.items(), key=lambda x: x[1], reverse=True
-            )
+                # Rank emotions based on mean scores
+                ranked_emotions = sorted(
+                    mean_scores.items(), key=lambda x: x[1], reverse=True
+                )
 
-            top_emotions = ranked_emotions[0]
-            # round the score to 2 decimal places
-            top_emotions = (top_emotions[0], round(top_emotions[1], 2))
-            res.append(list(top_emotions))
+                top_emotions = ranked_emotions[0]
+                # round the score to 2 decimal places
+                top_emotions = (top_emotions[0], round(top_emotions[1], 2))
+                res.append(list(top_emotions))
 
-    # Sort the emotions based on the score
-    # Create a dictionary to store the highest score for each emotion
-    emotion_dict = {}
-    for emotion, score in res:
-        if emotion not in emotion_dict or score > emotion_dict[emotion]:
-            emotion_dict[emotion] = score
+        # Sort the emotions based on the score
+        # Create a dictionary to store the highest score for each emotion
+        emotion_dict = {}
+        for emotion, score in res:
+            if emotion not in emotion_dict or score > emotion_dict[emotion]:
+                emotion_dict[emotion] = score
 
-    # Convert the dictionary back to a list
-    result = [[emotion, score] for emotion, score in emotion_dict.items()]
-    result.sort(key=lambda x: x[1], reverse=True)
-    # Sort the emotions based on the score, only take the top 3
-    for emotion in comment_with_emotion:
-        title, properties = emotion
-        properties.sort(key=lambda x: x["score"], reverse=True)
-        emotion[1] = properties[:5]
-    return {"result": result, "comment_with_emotion": comment_with_emotion}
+        # Convert the dictionary back to a list
+        result = [[emotion, score] for emotion, score in emotion_dict.items()]
+        result.sort(key=lambda x: x[1], reverse=True)
+        # Sort the emotions based on the score, only take the top 3
+        for emotion in comment_with_emotion:
+            title, properties = emotion
+            properties.sort(key=lambda x: x["score"], reverse=True)
+            emotion[1] = properties[:5]
+        return {"result": result, "comment_with_emotion": comment_with_emotion}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
+
+@app.post("/api/getTranscript")
+async def analyzeTranscript(request: TranscriptRequest):
+    try:
+        transcript = YouTubeTranscriptApi.get_transcript(request.videoId, languages=['de', 'en'])
+        return transcript
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not fetch transcript: {e}")
+    
+@app.post("/api/analyzeTranscript")
+async def analyzeTranscript(transcript: Transcript):
+    client = HumeStreamClient(os.getenv("HUME_API_KEY"))
+    config = LanguageConfig()
+    res = []
+    transcript_with_emotion = []
+    try:
+        async with client.connect([config]) as socket:
+            for sample in transcript.transcript_data:
+                result = await socket.send_text(sample)
+                emotions = result["language"]["predictions"][0]["emotions"]
+                transcript_with_emotion.append([sample, emotions])
+                aggregated_scores = defaultdict(float)
+                count_per_emotion = defaultdict(int)
+
+                for emotion in emotions:
+                    aggregated_scores[emotion["name"]] += emotion["score"]
+                    count_per_emotion[emotion["name"]] += 1
+
+                # Calculate mean scores
+                mean_scores = {
+                    emotion: aggregated_scores[emotion] /
+                    count_per_emotion[emotion]
+                    for emotion in aggregated_scores
+                }
+
+                # Rank emotions based on mean scores
+                ranked_emotions = sorted(
+                    mean_scores.items(), key=lambda x: x[1], reverse=True
+                )
+
+                top_emotions = ranked_emotions[0]
+                # round the score to 2 decimal places
+                top_emotions = (top_emotions[0], round(top_emotions[1], 2))
+                res.append(list(top_emotions))
+
+        # Sort the emotions based on the score
+        # Create a dictionary to store the highest score for each emotion
+        emotion_dict = {}
+        for emotion, score in res:
+            if emotion not in emotion_dict or score > emotion_dict[emotion]:
+                emotion_dict[emotion] = score
+
+        # Convert the dictionary back to a list
+        result = [[emotion, score] for emotion, score in emotion_dict.items()]
+        result.sort(key=lambda x: x[1], reverse=True)
+        # Sort the emotions based on the score, only take the top 3
+        for emotion in transcript_with_emotion:
+            title, properties = emotion
+            properties.sort(key=lambda x: x["score"], reverse=True)
+            emotion[1] = properties[:5]
+        return {"result": result, "transcript_with_emotion": transcript_with_emotion}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
+
