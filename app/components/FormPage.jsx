@@ -17,10 +17,10 @@ function FormPage({ title, desc, isHomePage }) {
                 ) :
                 (
                     <div>
-                        <input class="max-w-xs bg-gray-100 text-gray-900 p-1 px-2 min-h-[40px] rounded-md outline-none border-none leading-snug shadow-input focus:border-b-2 focus:border-indigo-500 focus:rounded-b-sm hover:outline hover:outline-1 hover:outline-gray-300 mx-[1rem]"
+                        <input className="max-w-xs bg-gray-100 text-gray-900 p-1 px-2 min-h-[40px] rounded-md outline-none border-none leading-snug shadow-input focus:border-b-2 focus:border-indigo-500 focus:rounded-b-sm hover:outline hover:outline-1 hover:outline-gray-300 mx-[1rem]"
                             name="text"
                             placeholder="https://www.youtube.com/watch?v=LLYrzpt8fPA..." />
-                        <button class="text-gray-900 py-2 px-6 text-lg rounded-md bg-gray-200 cursor-pointer border border-gray-200 transition-all duration-300 shadow-neu hover:border-white active:shadow-neu-active">
+                        <button className="text-gray-900 py-2 px-6 text-lg rounded-md bg-gray-200 cursor-pointer border border-gray-200 transition-all duration-300 shadow-neu hover:border-white active:shadow-neu-active">
                             Submit
                         </button>
                     </div>
