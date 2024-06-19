@@ -20,7 +20,6 @@ load_dotenv(dotenv_path=dotenv_path)
 
 
 # Define Pydantic models for request bodies
-=======
 MONGO_CONNECT_STRING = os.getenv("MONGO_CONNECT_STRING")
 client = MongoClient(MONGO_CONNECT_STRING)
 
@@ -186,49 +185,6 @@ async def analyzeTranscript(transcript: Transcript):
         return {"result": result, "transcript_with_emotion": transcript_with_emotion}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
-
-=======
-    async with client.connect([config]) as socket:
-        for sample in comment.comment_data:
-            result = await socket.send_text(sample)
-            emotions = result["language"]["predictions"][0]["emotions"]
-            comment_with_emotion.append([sample, emotions])
-            aggregated_scores = defaultdict(float)
-            count_per_emotion = defaultdict(int)
-
-            for emotion in emotions:
-                aggregated_scores[emotion["name"]] += emotion["score"]
-                count_per_emotion[emotion["name"]] += 1
-
-            mean_scores = {
-                emotion: aggregated_scores[emotion] /
-                count_per_emotion[emotion]
-                for emotion in aggregated_scores
-            }
-
-            ranked_emotions = sorted(
-                mean_scores.items(), key=lambda x: x[1], reverse=True
-            )
-
-            top_emotions = ranked_emotions[0]
-
-            top_emotions = (top_emotions[0], round(top_emotions[1], 2))
-            res.append(list(top_emotions))
-
-    emotion_dict = {}
-    for emotion, score in res:
-        if emotion not in emotion_dict or score > emotion_dict[emotion]:
-            emotion_dict[emotion] = score
-
-
-    result = [[emotion, score] for emotion, score in emotion_dict.items()]
-    result.sort(key=lambda x: x[1], reverse=True)
-
-    for emotion in comment_with_emotion:
-        title, properties = emotion
-        properties.sort(key=lambda x: x["score"], reverse=True)
-        emotion[1] = properties[:5]
-    return {"result": result, "comment_with_emotion": comment_with_emotion}
 
 @app.post("/api/save_results")
 async def save_results(video: Video):

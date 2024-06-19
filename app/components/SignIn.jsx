@@ -6,17 +6,19 @@ const SigninButton = () => {
 
   if (session && session.user) {
     return (
-      <div className="absolute right-4 top-4">
-        <button onClick={() => signOut()} className="text-black bg-main-pink py-1 px-2 border-2 rounded-md border-black">
+      <div className="absolute right-5 top-5">
+        <button onClick={() => signOut()} className="text-white py-1 px-5 border-2 rounded-full border-white">
           Sign Out
         </button>
       </div>
     );
   }
   return (
-    <button onClick={() => signIn()} className="absolute right-4 top-4 bg-main-pink py-1 px-2 border-2 rounded-md border-black">
-      Sign In
-    </button>
+    <div className="absolute right-5 top-5">
+      <button onClick={() => signIn()} className="text-white py-1 px-5 border-2 rounded-full border-white">
+        Sign In
+      </button>
+    </div>
   );
 };
 

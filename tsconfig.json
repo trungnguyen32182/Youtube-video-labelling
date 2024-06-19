@@ -26,8 +26,9 @@
     "next-env.d.ts",
     ".next/types/**/*.ts",
     "**/*.ts",
-    "**/*.tsx"
-, "app/components/ui/background-gradient-animation.jsx", "utils/cn.js"  ],
+    "**/*.tsx",
+    "utils/cn.ts",
+  ],
   "exclude": [
     "node_modules"
   ]
