@@ -28,6 +28,25 @@ export default function Home() {
     return noSpecialChars;
   };
 
+  const saveResults = async (videoData) => {
+    try {
+      const response = await fetch("http://localhost:8000/api/save_results", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(videoData),
+      });
+      const result = await response.json();
+      console.log(result);
+      return result;
+    } catch (error) {
+      console.error("Error saving results:", error);
+      return { error: "Failed to save results" };
+    }
+  };
+  
+
   const anazlyzeComments = async (comments) => {
     try {
       const data = await fetch(`http://localhost:8000/api/analyze`, {
@@ -90,6 +109,7 @@ export default function Home() {
     if (session) {
       setLoading(true);
       const data = await getComment(videoId);
+
       const channelId = data[0].channelId;
       const videoData = await getVideoDetail(videoId);
       const channelData = await getChannelDetail(channelId);
@@ -105,6 +125,7 @@ export default function Home() {
       setComments(filtered_comments);
       if (filtered_comments.length > 0) {
         const result = await anazlyzeComments(filtered_comments);
+
         setResult(result);
       }
       setVideoUrl("");
@@ -134,8 +155,15 @@ export default function Home() {
 
         console.log("handleTranscript ~ result:", result)
 
+
         setResult(result);
+        // Lưu kết quả vào cơ sở dữ liệu
+        const videoresultData = await { chanel: videoData.channelTitle, title: videoData.title, url: videoUrl, tags: result.result };
+        const saveResult = await saveResults(videoresultData);
       }
+
+      
+
       setVideoUrl("");
       setLoading(false);
     } else {
@@ -147,7 +175,11 @@ export default function Home() {
       <Appbar />
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-main-grey min-h-screen">
+
           <p className="m-4 text-[4rem] font-bold font-mono text-center"> Bỉ ngạn đỏ </p>
+
+          <p className="m-4 text-[4rem] font-bold font-mono"> Bỉ Ngạn đỏ </p>
+
           <p className="ml-4 text-[1.5rem] font-normal font-mono">
             Youtube Video Comment Sentiment Explorer
           </p>
