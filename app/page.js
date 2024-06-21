@@ -5,7 +5,7 @@ import AppBar from './components/AppBar';
 const Home = () => {
     return (
         <>
-            <AppBar />
+            <AppBar/>
             <BackgroundGradientAnimation />
             <div>
                 <div className='container mx-auto relative flex flex-row justify-between items-center px-4 z-50'>

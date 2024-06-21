@@ -2,6 +2,8 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import Loading from "./Loading";
+import ChangePageButton from './ChangePageButton';
+
 function FormPage({ title, desc, isHomePage, videoUrl, setVideoUrl, handleSubmit, isLoading }) {
 
     return (
@@ -42,8 +44,12 @@ function FormPage({ title, desc, isHomePage, videoUrl, setVideoUrl, handleSubmit
                         }
 
                     </div>
+                    
                 )
+
             }
+            {!isHomePage && <ChangePageButton />}
+
         </div>
     )
 }

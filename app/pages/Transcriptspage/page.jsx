@@ -17,15 +17,18 @@ function Transcriptspage() {
     const [video, setVideo] = useState({});
     const [result, setResult] = useState(null);
     const [transcripts, setTranscripts] = useState([]);
+    const [transcriptData, setTranscriptData] = useState([]);
 
     const filterText = (inputText) => {
-        // Remove emojis
-        const noEmojis = inputText.replace(/[\u{1F600}-\u{1F6FF}]/gu, "");
-        // Remove special characters
-        const noSpecialChars = noEmojis.replace(/[^\w\s]/gi, "");
+      if (inputText === "[Music]")
+          return inputText
+      // Remove emojis
+      const noEmojis = inputText.replace(/[\u{1F600}-\u{1F6FF}]/gu, "");
+      // Remove special characters
+      const noSpecialChars = noEmojis.replace(/[^\w\s]/gi, "");
 
-        return noSpecialChars;
-    };
+      return noSpecialChars;
+  };
 
     useEffect(() => {
         if (containerRef.current) {
@@ -45,102 +48,139 @@ function Transcriptspage() {
 
     const getTranscript = async (videoId) => {
         try {
-            const data = await fetch(`http://localhost:8000/api/getTranscript`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ videoId: videoId }),
-            });
-            const result = await data.json();
-            return result;
+          const data = await fetch(`http://localhost:8000/api/getTranscript`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ videoId: videoId }),
+          });
+          const result = await data.json();
+          return result;
         } catch (error) {
-            console.log(error);
-            setLoading(false);
+          console.log(error);
+          setLoading(false);
         }
-    };
+      };
 
-    const saveResults = async (videoData) => {
+    const saveTranscriptResults = async (videoData) => {
         try {
-            const response = await fetch("http://localhost:8000/api/save_results", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(videoData),
-            });
-            const result = await response.json();
-            console.log(result);
-            return result;
+          const response = await fetch("http://localhost:8000/api/save_transcript", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(videoData),
+          });
+          const result = await response.json();
+          console.log(result);
+          return result;
         } catch (error) {
-            console.error("Error saving results:", error);
-            return { error: "Failed to save results" };
+          console.error("Error saving results:", error);
+          return { error: "Failed to save results" };
         }
-    };
+      };
 
 
-    const anazlyzeTranscripts = async (Transcript_data) => {
+      const anazlyzeTranscripts = async (Transcript) => {
         try {
-            const data = await fetch(`http://localhost:8000/api/analyzeTranscript`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ transcript_data: Transcript_data }),
-            });
-            const result = await data.json();
-            return result;
+          const data = await fetch(`http://localhost:8000/api/analyzeTranscript`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ transcript_data: Transcript }),
+          });
+          const result = await data.json();
+          return result;
         } catch (error) {
-            console.log(error);
-            setLoading(false);
+          console.log(error);
+          setLoading(false);
         }
-    };
+      };
 
-    const handleSubmit = async (e) => {
+      const groupSegmentsByTotalDuration = (segments, totalTime = 30) => {
+        let currentDuration = 0;
+        const groupedObjects = [];
+        let currentTextGroup = '';
+        let currentStart;
+      
+        segments?.forEach((segment, index) => {
+          if (currentDuration === 0) {
+            currentStart = segment.start;
+          }
+      
+          if (currentDuration + segment.duration <= totalTime) {
+            currentTextGroup += segment.text + " ";
+            currentDuration += segment.duration;
+          } else {
+            groupedObjects.push({
+              start: currentStart,
+              duration: currentDuration,
+              text: currentTextGroup.trim()
+            });
+      
+            currentTextGroup = segment.text + " ";
+            currentDuration = segment.duration;
+            currentStart = segment.start;
+          }
+    
+          if (index === segments.length - 1) {
+            groupedObjects.push({
+              start: currentStart,
+              duration: currentDuration,
+              text: currentTextGroup.trim()
+            });
+          }
+        });
+      
+        return groupedObjects;
+      }
+      
+
+      const handleSubmit = async (e) => {
         e.preventDefault();
         if (!videoUrl.includes("youtube.com/watch?v=")) {
-            return;
+          return;
         }
         const videoId = videoUrl.split("v=")[1].split("&")[0];
-
+    
         if (session) {
-            setLoading(true);
-            const data = await getComment(videoId);
-            const channelId = data[0].channelId;
-            const videoData = await getVideoDetail(videoId);
-            const channelData = await getChannelDetail(channelId);
-            const transcriptData = await getTranscript(videoId)
-            if (transcriptData.length === 0) {
-                window.alert("This youtube link does not have a transcript");
-                return;
-            }
-            handleScroll()
-            const transcriptText = transcriptData?.map((item) => item.text)
-            let filtered_transcriptText = transcriptText?.map((item) => filterText(item));
-            filtered_transcriptText = filtered_transcriptText?.filter((item) => item !== "");
+          setLoading(true);
+          const transcriptData = await getTranscript(videoId)
+          const trimText = groupSegmentsByTotalDuration(transcriptData, 30);
+          const data = await getComment(videoId);
+          const channelId = data[0].channelId;
+          const videoData = await getVideoDetail(videoId);
+          const channelData = await getChannelDetail(channelId);
+          // const transcriptText = trimText.map((item) => item.text)
+          const transcriptTextStart = trimText.map((item) => ({ text: item.text, start: item.start }));
+          let filtered_transcriptText = transcriptTextStart?.map((item) => ({ text: filterText(item.text), start: item.start }));
+          filtered_transcriptText = filtered_transcriptText?.filter((item) => ({ text: item.text !== "", start: item.start }));
+    
+          setChannel(channelData);  
+          setVideo(videoData);
 
-            setChannel(channelData);
-            setVideo(videoData);
-            setTranscripts(filtered_transcriptText);
-
-            if (filtered_transcriptText.length > 0) {
-                const result = await anazlyzeTranscripts(filtered_transcriptText);
-                setResult(result);
-                // Lưu kết quả vào cơ sở dữ liệu
-                const videoresultData = await { chanel: videoData?.channelTitle, title: videoData?.title, url: videoUrl, tags: result?.result };
-                const saveResult = await saveResults(videoresultData);
-            }
-
-            setVideoUrl("");
-            setLoading(false);
+          setTranscriptData(filtered_transcriptText);
+          if (filtered_transcriptText.length > 0) {
+            const result = await anazlyzeTranscripts(filtered_transcriptText);
+            
+            setResult(result);
+            console.log("handleTranscript ~ result:", result)
+            const videoResultData = await { chanel: videoData.channelTitle, title: videoData.title, url: videoUrl, tags: result.result };
+            const saveResult = await saveTranscriptResults(videoResultData);
+          }
+          console.log(transcriptData);
+          setVideoUrl("");
+          setLoading(false);
         } else {
-            window.alert("Please login to continue");
+          window.alert("Please login to continue");
         }
-    };
+      };
 
     return (
         <>
-            <AppBar />
+            <AppBar/>
             <BackgroundGradientAnimation height={transcripts.length > 0 ? String(220 + heightInVH) : '100'} />
             <div>
                 <div className='container mx-auto relative flex flex-row justify-between items-center px-4 z-50'>
@@ -155,17 +195,17 @@ function Transcriptspage() {
                     />
                 </div>
             </div>
-            {transcripts.length > 0 && (
-                <div ref={containerRef} className='container mx-auto relative block top-[100vh] flex flex-row justify-between items-center px-4 z-50'>
-                    <div className="h-full w-full flex flex-col">
+            {transcriptData?.length > 0 && (
+                <div ref={containerRef} className='container mx-auto relative block top-[87vh] flex flex-row justify-center items-center px-4 z-50'>
+                    <div className=" display-result-comment">
                         <DisplayInfo
-                            title={"Your results from the lyrics"}
+                            title={"Your results from the comments"}
                             isLoading={isLoading}
                             video={video}
                             channel={channel}
                             result={result}
-                            component={false}
-                            data={transcripts}
+                            component= "transcript"
+                            data={transcriptData}
                         />
                     </div>
                 </div>

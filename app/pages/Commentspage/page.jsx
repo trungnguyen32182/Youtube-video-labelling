@@ -17,6 +17,7 @@ function Commentspage() {
     const [video, setVideo] = useState({});
     const [comments, setComments] = useState([]);
     const [result, setResult] = useState(null);
+    const page = "comment";
 
 
     const filterText = (inputText) => {
@@ -44,84 +45,90 @@ function Commentspage() {
         });
     };
 
-    const saveResults = async (videoData) => {
+    const saveCommentResults = async (videoData) => {
         try {
-            const response = await fetch("http://localhost:8000/api/save_results", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(videoData),
-            });
-            const result = await response.json();
-            console.log(result);
-            return result;
+          const response = await fetch("http://localhost:8000/api/save_results", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(videoData),
+          });
+          const result = await response.json();
+          console.log(result);
+          return result;
         } catch (error) {
-            console.error("Error saving results:", error);
-            return { error: "Failed to save results" };
+          console.error("Error saving results:", error);
+          return { error: "Failed to save results" };
         }
-    };
+      };
 
 
-    const anazlyzeComments = async (comments) => {
+      const anazlyzeComments = async (comments) => {
         try {
-            const data = await fetch(`http://localhost:8000/api/analyze`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ comment_data: comments }),
-            });
-            const result = await data.json();
-            return result;
+          const data = await fetch(`http://localhost:8000/api/analyze`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ comment_data: comments }),
+          });
+          const result = await data.json();
+          return result;
         } catch (error) {
-            console.log(error);
-            setLoading(false);
+          console.log(error);
+          setLoading(false);
         }
-    };
+      };
 
-    const handleSubmit = async (e) => {
+      const handleSubmit = async (e) => {
         e.preventDefault();
         if (!videoUrl.includes("youtube.com/watch?v=")) {
-            return;
+          return;
         }
         const videoId = videoUrl.split("v=")[1].split("&")[0];
-
+    
         if (session) {
-            setLoading(true);
-            const data = await getComment(videoId);
-            const channelId = data[0].channelId;
-            const videoData = await getVideoDetail(videoId);
-            const channelData = await getChannelDetail(channelId);
-
-            setChannel(channelData);
-            setVideo(videoData);
-            handleScroll();
-            const comment = data?.map(
-                (item) => item.topLevelComment.snippet.textDisplay
-            );
-
-            let filtered_comments = comment?.map((item) => filterText(item));
-            filtered_comments = filtered_comments.filter((item) => item !== "");
-            
-
-            setComments(filtered_comments);
-            if (filtered_comments.length > 0) {
-                const result = await anazlyzeComments(filtered_comments);
-                setResult(result);
-            }
-            setVideoUrl("");
-            setLoading(false);
+          setLoading(true);
+          const data = await getComment(videoId);
+          const channelId = data[0].channelId;
+          const videoData = await getVideoDetail(videoId);
+          const channelData = await getChannelDetail(channelId);
+    
+          setChannel(channelData);  
+          setVideo(videoData);
+    
+          const comment = data.map(
+            (item) => item.topLevelComment.snippet.textDisplay
+          );
+          let filtered_comments = comment.map((item) => filterText(item));
+          filtered_comments = filtered_comments.filter((item) => item !== "");
+          setComments(filtered_comments);
+          
+          if (filtered_comments.length > 0) {
+            const result = await anazlyzeComments(filtered_comments);
+            console.log(filtered_comments);
+            setResult(result);
+    
+          
+            const videoresultData = await { chanel: videoData.channelTitle, title: videoData.title, url: videoUrl, tags: result.result };
+            const saveResult = await saveCommentResults(videoresultData);
+          
+          }
+          setVideoUrl("");
+          setLoading(false);
         } else {
-            window.alert("Please login to continue");
+          window.alert("Please login to continue");
         }
-    };
+      };
 
     return (
         <>
-            <AppBar />
+            <AppBar/>
             <BackgroundGradientAnimation height={comments?.length > 0 ? String(220 + heightInVH) : '100'} />
+                
             <div>
+            
                 <div className='container mx-auto relative flex flex-row justify-between items-center px-4 z-50'>
                     <FormPage
                         title="Enter your url youtube"
@@ -135,15 +142,15 @@ function Commentspage() {
                 </div>
             </div>
             {comments?.length > 0 && (
-                <div ref={containerRef} className='container mx-auto relative block top-[100vh] flex flex-row justify-between items-center px-4 z-50'>
-                    <div className="h-full w-full flex flex-col">
+                <div ref={containerRef} className='container mx-auto relative block top-[87vh] flex flex-row justify-center items-center px-4 z-50'>
+                    <div className=" display-result-comment">
                         <DisplayInfo
                             title={"Your results from the comments"}
                             isLoading={isLoading}
                             video={video}
                             channel={channel}
                             result={result}
-                            component={true}
+                            component= "comment"
                             data={comments}
                         />
                     </div>

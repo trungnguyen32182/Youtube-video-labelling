@@ -16,11 +16,11 @@ export const ChannelHeader = ({ channel }) => {
 
 export const VideoHeader = ({ video }) => {
   return (
-    <div className="mt-12 ml-12 flex-col justify-center gap-4">
+    <div className="mt-12 ml-12 flex-col justify-center ">
       <img
         src={video?.thumbnails?.maxres?.url}
         alt={"video thumbnail"}
-        className="object-cover w-[420px] rounded-md"
+        className="object-cover w-[500px] rounded-md"
       />
     </div>
   );
