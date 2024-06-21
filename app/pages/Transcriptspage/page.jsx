@@ -167,7 +167,7 @@ function Transcriptspage() {
             
             setResult(result);
             console.log("handleTranscript ~ result:", result)
-            const videoResultData = await { chanel: videoData.channelTitle, title: videoData.title, url: videoUrl, tags: result.result };
+            const videoResultData = await { chanel: videoData.channelTitle, title: videoData.title, url: videoUrl, tags: result.result , transcripts: result.transcript_with_emotion};
             const saveResult = await saveTranscriptResults(videoResultData);
           }
           console.log(transcriptData);

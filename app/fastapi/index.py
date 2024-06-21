@@ -48,6 +48,21 @@ class Video(BaseModel):
     url: str
     tags: List[List] = []
 
+class EmotionItem(BaseModel):
+    name: str
+    score: float
+
+class TranscriptSaveItem(BaseModel):
+    text: str
+    start: float
+    emotions: List[EmotionItem]
+
+class TranscriptVideo(BaseModel):
+    chanel: str
+    title: str
+    url: str
+    tags: List[List] = []
+    transcripts: List[TranscriptSaveItem]
 
 app = FastAPI()
 
@@ -224,7 +239,7 @@ async def save_results(video: Video):
 
 
 @app.post("/api/save_transcript")
-async def save_transcript(video: Video):
+async def save_transcript(video: TranscriptVideo):
     video_dict = video.dict()
 
     video_results_collection = client['dataset']['transcript_results']
