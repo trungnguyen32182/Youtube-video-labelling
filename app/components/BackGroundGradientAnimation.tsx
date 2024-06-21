@@ -94,7 +94,7 @@ const BackgroundGradientAnimation = ({
                 "w-screen absolute overflow-hidden top-0 left-0 right-0 bg-[linear-gradient(40deg,var(--gradient-background-start),var(--gradient-background-end))]",
                 containerclassName
             )}
-            style={{height: `${height}vh`}}
+            style={{height: `100%`}}
         >
             <svg className="hidden">
                 <defs>

@@ -6,7 +6,7 @@ const SigninButton = () => {
 
   if (session && session.user) {
     return (
-      <div className="absolute right-5 top-5">
+      <div className=" right-5 top-5">
         <button onClick={() => signOut()} className="text-white py-1 px-5 border-2 rounded-full border-white">
           Sign Out
         </button>
@@ -14,7 +14,7 @@ const SigninButton = () => {
     );
   }
   return (
-    <div className="absolute right-5 top-5">
+    <div className=" right-5 top-5">
       <button onClick={() => signIn()} className="text-white py-1 px-5 border-2 rounded-full border-white">
         Sign In
       </button>
