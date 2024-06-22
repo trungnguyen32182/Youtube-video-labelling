@@ -47,7 +47,7 @@ const Dataset = () => {
   
     return (
       <div className="dataset-container">
-        <header className="relative dataset-appbar flex flex-row justify-between items-center px-4 py-2 z-50">
+        <header className="relative dataset-appbar flex flex-row justify-between items-center px-4 py-2 z-50 top-0">
           <Link href={'/'} className='bg-transparent flex flex-row justify-between items-center'>
               <img src='../logoDataset.png' alt='logo' className='w-[3.5rem] h-[3.5rem]' />
               <span className='h-5 text-[1.5rem] leading-[1rem] font-bold'>Bingando</span>
@@ -59,7 +59,7 @@ const Dataset = () => {
             {isTranscriptData ? "Show Comments Data" : "Show Transcript Data"}
           </button>
         </header>
-        <DatasetTable data={data} />
+        <DatasetTable data={data} isTranscriptData={isTranscriptData}/>
       </div>
     );
   };

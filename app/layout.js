@@ -18,6 +18,6 @@ export default function RootLayout({ children }) {
           <ScrollToTopButton/>
         </Providers>
       </body>
-    </html >
+    </html>
   );
 }
